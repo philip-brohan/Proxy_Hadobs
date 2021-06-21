@@ -1,8 +1,17 @@
-# Load hourly temperature data from the UKPP analysis
+# Load temperature data from the UKPP analysis
 
 import os
 import iris
 import numpy as np
+
+
+def UKPP_load_tasmax(year, month, day):
+    dirname = "%04d%02d%02d" % (year, month, day)
+    filename = "HUKG_Proxy_tasmax.nc"
+    hdata = iris.load_cube(
+        "%s/Proxy_Hadobs/opfc/UKPP/%s/%s" % (os.getenv("SCRATCH"), dirname, filename)
+    )
+    return hdata
 
 
 def UKPP_load_hourly(year, month, day, hour):
