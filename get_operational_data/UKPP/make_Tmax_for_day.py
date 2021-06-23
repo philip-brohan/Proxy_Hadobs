@@ -50,14 +50,14 @@ def get_data_for_hour(year, month, day, hour):
     fname = None
     while fname is None:
         dte = datetime.datetime(year, month, day, hour) - datetime.timedelta(
-            hours=offset
+            seconds=offset
         )
         fn = get_PP_file_for_dtime(dte)
         if os.path.isfile(fn):
             fname = fn
             break
-        offset += 1
-        if offset > 6:
+        offset += 3600
+        if offset > 21600:
             raise OSError(
                 "No data on disc for %04d-%02d-%02d:%02d" % (year, month, day, hour)
             )

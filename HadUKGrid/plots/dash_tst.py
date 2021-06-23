@@ -10,18 +10,52 @@ import dash_html_components as html
 
 sys.path.append("%s/." % os.path.dirname(__file__))
 from UKPP_load_temperature import UKPP_load_tasmax
-from UK_temperature_contour import UKTC_Figure
+from temperature_contour import Tmax_Figure
 from HUKG_load_tmax import HUKG_load_tmax
-from HadUKG_temperature_contour import HUKG_Figure
+from HUKG_load_tmax import HUKG_load_tmax_climatology
 
-hdata = UKPP_load_tasmax(2021, 1, 12)
-cfig = UKTC_Figure(hdata)
-ddata = HUKG_load_tmax(2021, 1, 12)
-dfig = HUKG_Figure(ddata)
+state = {
+    "year": 2021,
+    "month": 3,
+    "day": 28,
+    "type": "anomalies",
+    "actuals": {
+        "zmin": -5,
+        "zmax": 15,
+    },
+    "anomalies": {
+        "zmin": -5,
+        "zmax": 5,
+    },
+    "xmin": -200,
+    "xmax": 700,
+    "ymin": -200,
+    "ymax": 1250,
+}
+
+cdata = HUKG_load_tmax_climatology(state["year"], state["month"], state["day"])
+hdata = UKPP_load_tasmax(state["year"], state["month"], state["day"])
+cfig = Tmax_Figure(
+    hdata - cdata,
+    title="Tmax from UKPP",
+    zmin=state[state["type"]]["zmin"],
+    zmax=state[state["type"]]["zmax"],
+)
+ddata = HUKG_load_tmax(state["year"], state["month"], state["day"])
+dfig = Tmax_Figure(
+    ddata - cdata,
+    title="Tmax from HadUKGrid",
+    zmin=state[state["type"]]["zmin"],
+    zmax=state[state["type"]]["zmax"],
+)
 
 app = dash.Dash()
 app.layout = html.Div(
     [
+        html.H1(
+            "%04d-%02d-%02d %s"
+            % (state["year"], state["month"], state["day"], state["type"])
+        ),
         dcc.Graph(figure=dfig, style={"display": "inline-block"}),
         dcc.Graph(figure=cfig, style={"display": "inline-block"}),
     ],
