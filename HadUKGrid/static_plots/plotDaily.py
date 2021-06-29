@@ -13,6 +13,9 @@ sys.path.append("%s/./HUKG" % os.path.dirname(__file__))
 from HUKG_load_tmax import HUKG_load_tmax
 from HUKG_load_tmax import HUKG_load_tmax_climatology
 
+sys.path.append("%s/./UKPP" % os.path.dirname(__file__))
+from UKPP_load_tmax import UKPP_load_tmax
+
 sys.path.append("%s/./maps" % os.path.dirname(__file__))
 from plotTmax import plotTmax
 
@@ -82,7 +85,7 @@ mask = iris.load_cube(
 if args.source == "HadUKGrid":
     sdata = HUKG_load_tmax(args.year, args.month, args.day)
 elif args.source == "UKPP":
-    sys.exit(1)
+    sdata = UKPP_load_tmax(args.year, args.month, args.day)
 
 # Subtract the climatology, if anomalies wanted
 if args.type == "anomalies":
@@ -95,7 +98,7 @@ if args.type == "differences":
     if args.source == "UKPP":
         ddata = HUKG_load_tmax(args.year, args.month, args.day)
     elif args.source == "HadUKGrid":
-        sys.exit(1)
+        ddata = UKPP_load_tmax(args.year, args.month, args.day)
     sdata = sdata - ddata
 
 # Make the plot
