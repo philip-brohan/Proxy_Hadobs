@@ -62,12 +62,10 @@ parser.add_argument(
 )
 
 args = parser.parse_args()
-if not os.path.isdir(args.opdir):
-    os.makedirs(args.opdir)
 
 opdir = None
 if args.opdir is None:
-    opdir = "%s/figures/HadUKGrid/daily/Tmax/%04d/%02d/%02d" % (
+    opdir = "%s/Proxy_Hadobs/figures/HadUKGrid/daily/Tmax/%04d/%02d/%02d" % (
         os.getenv("SCRATCH"),
         args.year,
         args.month,
@@ -76,29 +74,42 @@ if args.opdir is None:
 else:
     opdir = args.opdir
 
+if not os.path.isdir(opdir):
+    os.makedirs(opdir)
+
 # Get a land-sea mask
 mask = iris.load_cube(
     "%s/fixed_fields/land_mask/HadUKG_land_from_Copernicus.nc" % os.getenv("DATADIR"),
+    iris.Constraint(
+        projection_y_coordinate=lambda cell: args.latMin * 1000
+        <= cell
+        <= args.latMax * 1000
+    )
+    & iris.Constraint(
+        projection_x_coordinate=lambda cell: args.lonMin * 1000
+        <= cell
+        <= args.lonMax * 1000
+    ),
 )
 
 # Load the source data
 if args.source == "HadUKGrid":
-    sdata = HUKG_load_tmax(args.year, args.month, args.day)
+    sdata = HUKG_load_tmax(args)
 elif args.source == "UKPP":
-    sdata = UKPP_load_tmax(args.year, args.month, args.day)
+    sdata = UKPP_load_tmax(args)
 
 # Subtract the climatology, if anomalies wanted
 if args.type == "anomalies":
-    cdata = HUKG_load_tmax_climatology(args.year, args.month, args.day)
+    cdata = HUKG_load_tmax_climatology(args)
     cdata = cdata.regrid(sdata, iris.analysis.Nearest())
     sdata = sdata - cdata
 
 # Subtract the other source, if differences wanted
 if args.type == "differences":
     if args.source == "UKPP":
-        ddata = HUKG_load_tmax(args.year, args.month, args.day)
+        ddata = HUKG_load_tmax(args)
     elif args.source == "HadUKGrid":
-        ddata = UKPP_load_tmax(args.year, args.month, args.day)
+        ddata = UKPP_load_tmax(args)
     sdata = sdata - ddata
 
 # Make the plot
@@ -113,6 +124,6 @@ plotTmax(
     height=11 * 1.61,
     width=11,
     opDir=opdir,
-    fName="%s.png" % args.type,
+    fName="%s_map_%s.png" % (args.source, args.type),
     lMask=mask,
 )

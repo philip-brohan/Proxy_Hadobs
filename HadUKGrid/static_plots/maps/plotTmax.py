@@ -68,7 +68,7 @@ def plotTmax(
 
     # Axes for the map
     ax_map = fig.add_axes([0.075, 0.055, 0.9, 0.95])
-    #ax_map.set_axis_off()
+    # ax_map.set_axis_off()
     ax_map.set_ylim(latMin, latMax)
     ax_map.set_xlim(lonMin, lonMax)
     # Centre on page with aspect ratio from data
@@ -104,7 +104,9 @@ def plotTmax(
     # ColourBar
     ax_cb = fig.add_axes([0.075, 0.0, 0.9, 0.05])
     ax_cb.set_axis_off()
-    cb = fig.colorbar(T_img,ax=ax_cb,location='bottom',orientation='horizontal',fraction=1.0)
+    cb = fig.colorbar(
+        T_img, ax=ax_cb, location="bottom", orientation="horizontal", fraction=1.0
+    )
 
     if not os.path.isdir(opDir):
         os.makedirs(opDir)
