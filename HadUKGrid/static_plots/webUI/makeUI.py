@@ -34,7 +34,11 @@ else:
     opdir = args.opdir
 
 if not os.path.isdir(opdir):
-    os.makedirs(opdir)
+    try:
+        os.makedirs(opdir)
+    except Exception:
+        pass
+
 fname = "%s/%s.html" % (opdir, args.type)
 fh = open(fname, "w")
 
