@@ -61,7 +61,7 @@ def plotTmax(
         "family": "sans-serif",
         "sans-serif": "Arial",
         "weight": "normal",
-        "size": 16,
+        "size": 20,
     }
     matplotlib.rc("font", **font)
     axb = fig.add_axes([0, 0, 1, 1])

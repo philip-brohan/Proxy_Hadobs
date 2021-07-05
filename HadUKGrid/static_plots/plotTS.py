@@ -76,17 +76,6 @@ else:
 if not os.path.isdir(opdir):
     os.makedirs(opdir)
 
-if args.vMax is None:
-    if args.type == "anomalies" or args.type == "differences":
-        args.vMax = 10
-    else:
-        args.vMax = (10, 10, 12, 14, 16, 18, 20, 20, 18, 16, 14, 12)[args.month - 1]
-if args.vMin is None:
-    if args.type == "anomalies" or args.type == "differences":
-        args.vMin = args.vMax * -1
-    else:
-        args.vMin = (-10, -10, -8, -6, -4, -2, 0, 0, -2, -4, -6, -8)[args.month - 1]
-
 
 def loadDaily(args):
     # Load the source data
@@ -120,6 +109,8 @@ def box_1_day(args, offset, ax):
     atmp.year = current.year
     atmp.month = current.month
     atmp.day = current.day
+    vMax = 0
+    vMin = 0
     # HadCRUTGrid box
     atmp.source = "HadUKGrid"
     if atmp.type == "differences":
@@ -129,10 +120,12 @@ def box_1_day(args, offset, ax):
         bColour = (31 / 255, 119 / 255, 180 / 255)  # T10 blue
     try:
         cdata = loadDaily(atmp)
+        vMax = np.max(cdata.data)
+        vMin = np.min(cdata.data)
         ax.boxplot(
             cdata.data.compressed(),
             positions=[offset - 1 / 5],
-            widths=1 / 3,
+            widths=1 / 4,
             whis=(0, 100),
             showcaps=False,
             medianprops={"color": "black"},
@@ -150,6 +143,8 @@ def box_1_day(args, offset, ax):
         bColour = (214 / 255, 39 / 255, 40 / 255)  # T10 red
     try:
         cdata = loadDaily(atmp)
+        vMax = max(vMax, np.max(cdata.data))
+        vMin = min(vMin, np.min(cdata.data))
         ax.boxplot(
             cdata.data.compressed(),
             positions=[offset + 1 / 5],
@@ -163,6 +158,7 @@ def box_1_day(args, offset, ax):
         )
     except Exception:
         pass
+    return (vMax, vMin)
 
 
 fig = Figure(
@@ -180,20 +176,24 @@ font = {
     "family": "sans-serif",
     "sans-serif": "Arial",
     "weight": "normal",
-    "size": 14,
+    "size": 20,
 }
 matplotlib.rc("font", **font)
 axb = fig.add_axes([0, 0, 1, 1])
 ax_ts = fig.add_axes([0.03, 0.07, 0.96, 0.9])
-ax_ts.set_ylim(args.vMin, args.vMax)
+ax_ts.set_ylim(-1, 1)
 ax_ts.set_xlim(args.dayrange * -1 - 0.5, args.dayrange + 0.5)
 ax_ts.set_aspect("auto")
 
 ticL = []
 ticV = []
+vMax = 1
+vMin = -1
 dte = datetime.date(args.year, args.month, args.day)
 for offset in range(args.dayrange * -1, args.dayrange + 1):
-    box_1_day(args, offset, ax_ts)
+    (dMx, dMn) = box_1_day(args, offset, ax_ts)
+    vMax = max(vMax, dMx)
+    vMin = min(vMin, dMn)
     ticV.append(offset)
     current = dte + datetime.timedelta(days=offset)
     tL = "%02d" % current.day
@@ -213,6 +213,17 @@ if args.type == "anomalies" or args.type == "differences":
             zorder=1,
         )
     )
+
+if args.type == "anomalies" or args.type == "differences":
+    vMax = max(vMax, vMin * -1)
+    vMin = vMax * -1
+
+if args.vMax is not None:
+    vMax = args.vMax
+if args.vMin is not None:
+    vMin = args.vMin
+
+ax_ts.set_ylim(vMin, vMax)
 
 ax_ts.set_xticks(ticV)
 ax_ts.set_xticklabels(ticL)

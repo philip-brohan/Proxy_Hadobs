@@ -98,18 +98,47 @@ if args.source == "HadUKGrid":
 elif args.source == "UKPP":
     sdata = UKPP_load_tmax(args)
 
+# Load the other source - we may need it to make the ranges match
+if args.source == "UKPP":
+    ddata = HUKG_load_tmax(args)
+elif args.source == "HadUKGrid":
+    ddata = UKPP_load_tmax(args)
+
 # Subtract the climatology, if anomalies wanted
-if args.type == "anomalies":
+#  (or if differences wanted, as we'll need the anomaly range for comparison)
+if args.type == "anomalies" or args.type == "differences":
     cdata = HUKG_load_tmax_climatology(args)
     cdata = cdata.regrid(sdata, iris.analysis.Nearest())
     sdata = sdata - cdata
+    cdata = cdata.regrid(ddata, iris.analysis.Nearest())
+    ddata = ddata - cdata
+
+# Set defaults for the range, if not specified
+if args.vMax is None:
+    if args.type == "actuals":
+        args.vMax = max(np.max(sdata.data), np.max(ddata.data))
+    if args.type == "anomalies":
+        args.vMax = max(
+            np.max(sdata.data),
+            np.max(ddata.data),
+            np.min(sdata.data) * -1,
+            np.min(ddata.data) * -1,
+        )
+    if args.type == "differences":
+        args.vMax = max(
+            np.max(sdata.data),
+            np.max(ddata.data),
+            np.min(sdata.data) * -1,
+            np.min(ddata.data) * -1,
+        )
+if args.vMin is None:
+    if args.type == "anomalies" or args.type == "differences":
+        args.vMin = args.vMax * -1
+    else:
+        args.vMin = min(np.min(sdata.data), np.min(ddata.data))
 
 # Subtract the other source, if differences wanted
 if args.type == "differences":
-    if args.source == "UKPP":
-        ddata = HUKG_load_tmax(args)
-    elif args.source == "HadUKGrid":
-        ddata = UKPP_load_tmax(args)
     sdata = sdata - ddata
 
 # Make the plot
