@@ -89,7 +89,7 @@ def get_data_for_hour(year, month, day, hour, lead_time):
     if cFile is None:
         raise Exception(
             "No data on disc for %s at %d lead"
-            % (vTime.strftime("%Y-%M-%D:%H"), lead_time)
+            % (vTime.strftime("%Y-%m-%d:%H"), lead_time)
         )
     hdata = iris.load_cube(
         cFile,
@@ -104,13 +104,20 @@ tmax = get_data_for_hour(
 )
 for offset in range(1, 25):  # Include both 9ams in period
     dto = dtstart + datetime.timedelta(hours=offset)
+    if args.lead_time>96 and dto.hour%3 !=0: # long lead times have 3-hourly data
+        continue 
     tt = get_data_for_hour(dto.year, dto.month, dto.day, dto.hour, args.lead_time)
     tmax.data = np.maximum(tmax.data, tt.data)
 
 # Sample randomly from the percentiles to reduce to 2d
 def sample1d(data, axis=0):
-    rng = np.random.default_rng()
-    return rng.choice(data, axis=axis)
+    s=data.shape
+    ndata = np.zeros((s[0],s[1]))
+    for x in range(s[0]):
+        for y in range(s[1]):
+            rand_l = np.random.randint(0,s[2])
+            ndata[x,y]=data[x,y,rand_l]
+    return ndata
 
 
 SAMPLE = Aggregator("Random sample", sample1d)
