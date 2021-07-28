@@ -72,7 +72,7 @@ args = parser.parse_args()
 opdir = None
 if args.opdir is None:
     opdir = (
-        "%s/Proxy_Hadobs/figures/haduk-grid/daily_maxtemp/Improver/%s/%04d/%02d/%02d"
+        "%s/Proxy_Hadobs/figures/haduk-grid/Improver/daily-maxtemp/%s/%04d/%02d/%02d"
         % (
             os.getenv("SCRATCH"),
             args.adjustment,
@@ -103,10 +103,11 @@ def loadDaily(args):
 
     # Subtract the other source, if differences wanted
     if args.type == "differences":
-        if args.source == "UKPP":
+        if args.source == "Improver":
             ddata = HUKG_load_tmax(args)
         elif args.source == "HadUKGrid":
             ddata = Improver_load_tmax(args)
+        ddata = ddata.regrid(sdata, iris.analysis.Nearest())
         sdata = sdata - ddata
 
     return sdata
@@ -144,7 +145,8 @@ def box_1_day(args, offset, ax):
             boxprops={"facecolor": bColour},
             patch_artist=True,
         )
-    except Exception:
+    except Exception as e:
+        print(e)
         pass
     # forecast box
     atmp.source = "Improver"
