@@ -28,7 +28,7 @@ parser.add_argument(
     type=str,
     required=False,
     default="raw",
-    help="Algorithem used to adjust forecast data to match obs.",
+    help="Algorithm used to adjust forecast data to match obs.",
 )
 args = parser.parse_args()
 
@@ -83,7 +83,7 @@ def get_data_for_hour(year, month, day, hour, lead_time):
         )
         fLead = (vTime - bTime).total_seconds() / 3600
         if fLead >= lead_time:
-            if cLead is None or cLead > fLead:
+            if cLead is None or cLead < fLead:
                 cFile = file
                 cLead = fLead
     if cFile is None:
@@ -104,19 +104,19 @@ tmax = get_data_for_hour(
 )
 for offset in range(1, 25):  # Include both 9ams in period
     dto = dtstart + datetime.timedelta(hours=offset)
-    if args.lead_time>96 and dto.hour%3 !=0: # long lead times have 3-hourly data
-        continue 
+    if args.lead_time > 96 and dto.hour % 3 != 0:  # long lead times have 3-hourly data
+        continue
     tt = get_data_for_hour(dto.year, dto.month, dto.day, dto.hour, args.lead_time)
     tmax.data = np.maximum(tmax.data, tt.data)
 
 # Sample randomly from the percentiles to reduce to 2d
 def sample1d(data, axis=0):
-    s=data.shape
-    ndata = np.zeros((s[0],s[1]))
+    s = data.shape
+    ndata = np.zeros((s[0], s[1]))
     for x in range(s[0]):
         for y in range(s[1]):
-            rand_l = np.random.randint(0,s[2])
-            ndata[x,y]=data[x,y,rand_l]
+            rand_l = np.random.randint(0, s[2])
+            ndata[x, y] = data[x, y, rand_l]
     return ndata
 
 

@@ -32,9 +32,10 @@ def unpack(year, month, day):
             hour,
         )
         if not os.path.isfile(tar_file):
-            raise Exception(
-                "Improver data file not available, run the MASS extraction first"
+            print(
+                "Data file not available: %s" % tar_file
             )
+            continue
         try:
             tf = tarfile.open(tar_file)
             contents = tf.getmembers()
