@@ -40,7 +40,7 @@ while dts <= dte:
                 print(
                     (
                         "./plotMap.py --year=%d --month=%d --day=%d "
-                        + "--adjustment=%s --lead_time=%d --type=%s --source=HadUKGrid"
+                        + "--adjustment=%s --lead_time=%d --type=%s --source=haduk-grid"
                     )
                     % (dts.year, dts.month, dts.day, adjustment, lead, type)
                 )

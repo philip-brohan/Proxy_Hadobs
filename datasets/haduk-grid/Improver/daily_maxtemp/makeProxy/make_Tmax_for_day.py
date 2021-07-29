@@ -83,7 +83,7 @@ def get_data_for_hour(year, month, day, hour, lead_time):
         )
         fLead = (vTime - bTime).total_seconds() / 3600
         if fLead >= lead_time:
-            if cLead is None or cLead < fLead:
+            if cLead is None or cLead > fLead:
                 cFile = file
                 cLead = fLead
     if cFile is None:
@@ -121,7 +121,7 @@ def sample1d(data, axis=0):
 
 
 SAMPLE = Aggregator("Random sample", sample1d)
-tmax = tmax.collapsed("percentile", SAMPLE)
+tmax = tmax.collapsed("percentile", iris.analysis.MEAN)
 
 # Regrid to match HadUKGrid
 HGG = get_HUKG_cube_for_grid()

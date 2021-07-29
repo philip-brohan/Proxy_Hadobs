@@ -33,8 +33,8 @@ parser.add_argument(
 )
 parser.add_argument(
     "--source",
-    help="HadUKGrid, or Improver",
-    choices=["HadUKGrid", "Improver"],
+    help="haduk-grid, or Improver",
+    choices=["haduk-grid", "Improver"],
     type=str,
     required=True,
 )
@@ -72,7 +72,7 @@ args = parser.parse_args()
 opdir = None
 if args.opdir is None:
     opdir = (
-        "%s/Proxy_Hadobs/figures/haduk-grid/daily_maxtemp/Improver/%s/%04d/%02d/%02d"
+        "%s/Proxy_Hadobs/figures/haduk-grid/Improver/daily-maxtemp/%s/%04d/%02d/%02d"
         % (
             os.getenv("SCRATCH"),
             args.adjustment,
@@ -103,7 +103,7 @@ mask = iris.load_cube(
 )
 
 # Load the source data
-if args.source == "HadUKGrid":
+if args.source == "haduk-grid":
     sdata = HUKG_load_tmax(args)
 elif args.source == "Improver":
     sdata = Improver_load_tmax(args)
@@ -111,7 +111,7 @@ elif args.source == "Improver":
 # Load the other source - we may need it to make the ranges match
 if args.source == "Improver":
     ddata = HUKG_load_tmax(args)
-elif args.source == "HadUKGrid":
+elif args.source == "haduk-grid":
     ddata = Improver_load_tmax(args)
 
 # Subtract the climatology, if anomalies wanted
