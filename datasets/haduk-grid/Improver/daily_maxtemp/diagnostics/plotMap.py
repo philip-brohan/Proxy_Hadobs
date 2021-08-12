@@ -8,6 +8,8 @@ import numpy as np
 
 import iris
 import iris.analysis
+import warnings
+warnings.filterwarnings("ignore", category=iris.fileformats.netcdf.UnknownCellMethodWarning)
 
 sys.path.append("%s/../../../utils/plots" % os.path.dirname(__file__))
 from HUKG_load_tmax import HUKG_load_tmax

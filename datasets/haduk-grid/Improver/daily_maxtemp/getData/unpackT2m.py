@@ -11,6 +11,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--year", type=int, required=True)
 parser.add_argument("--month", type=int, required=True)
 parser.add_argument("--day", type=int, required=True)
+parser.add_argument("--hour", type=int, default=None, required=False)
 args = parser.parse_args()
 
 local_dir = "%s/Proxy_Hadobs/opfc/Improver" % (os.getenv("SCRATCH"),)
@@ -19,8 +20,10 @@ if not os.path.isdir(local_dir):
 
 
 # Extract the 2m temperatures
-def unpack(year, month, day):
+def unpack(year, month, day, hr):
     for hour in range(0, 24):
+        if hr is not None and hr!=hour:
+            continue
         tar_file = "%s/%04d%02d%02d/mix_suite_%04d%02d%02dT%02d00Z/grid.tar" % (
             local_dir,
             year,
@@ -59,4 +62,4 @@ def unpack(year, month, day):
             print(e)
 
 
-unpack(args.year, args.month, args.day)
+unpack(args.year, args.month, args.day, args.hour)

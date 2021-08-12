@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Get Improver UK fields for 1 day from MASS, and store on SCRATCH.
+# Get Improver UK fields for from MASS, and store on SCRATCH.
 
 import os
 import sys
@@ -20,6 +20,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--year", type=int, required=True)
 parser.add_argument("--month", type=int, required=True)
 parser.add_argument("--day", type=int, required=True)
+parser.add_argument("--hour", type=int, required=False, default=None)
 args = parser.parse_args()
 
 moose_dir = "moose:/adhoc/users/christopher.sampson/"
@@ -34,8 +35,10 @@ if not os.path.isdir(local_dir):
     os.makedirs(local_dir)
 
 
-def unarchive(year, month, day):
+def unarchive(year, month, day, hr):
     for hour in range(0, 24):
+        if hr is not None and hr != hour:
+            continue
         lhdir = "%s/mix_suite_%04d%02d%02dT%02d00Z" % (
             local_dir,
             year,
@@ -69,4 +72,4 @@ def unarchive(year, month, day):
             continue
 
 
-unarchive(args.year, args.month, args.day)
+unarchive(args.year, args.month, args.day, args.hour)

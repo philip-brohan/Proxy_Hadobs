@@ -11,6 +11,8 @@ import copy
 
 import iris
 import iris.analysis
+import warnings
+warnings.filterwarnings("ignore", category=iris.fileformats.netcdf.UnknownCellMethodWarning)
 
 import matplotlib
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
