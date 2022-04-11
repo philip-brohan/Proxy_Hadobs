@@ -23,7 +23,7 @@ parser.add_argument("--day", type=int, required=True)
 parser.add_argument("--hour", type=int, required=False, default=None)
 args = parser.parse_args()
 
-moose_dir = "moose:/adhoc/users/christopher.sampson/"
+moose_dir = "moose:/adhoc/users/christopher.sampson/OS44"
 
 local_dir = "%s/Proxy_Hadobs/opfc/Improver/%04d%02d%02d" % (
     os.getenv("SCRATCH"),
