@@ -2,14 +2,18 @@
 
 import os
 import iris
+import iris.cube
 import iris.time
+import iris.fileformats
+import iris.util
+import cf_units
 import datetime
 import glob
+import numpy as np
 
 # Variable name to iris stash code
 #  See https://code.metoffice.gov.uk/trac/nwpscience/wiki/ModelInfo
 def stash_from_variable_names(variable):
-
     if variable == "prmsl":
         return iris.fileformats.pp.STASH(1, 16, 222)
     if variable == "air.2m":
@@ -37,13 +41,13 @@ def get_file_names(ftime):
     return fl
 
 
-def filter_files_by_lead(file_names, max_lead, min_lead):
+def filter_files_by_lead(file_names, min_lead, max_lead):
     ff = []
     for fn in file_names:
         f_min_lead = int(fn[-12:-9])
         f_max_lead = int(fn[-8:-5])
-        if (max_lead is None or max_lead <= f_max_lead) and (
-            min_lead is None or min_lead >= f_min_lead
+        if (max_lead is None or max_lead >= f_min_lead) and (
+            min_lead is None or min_lead <= f_max_lead
         ):
             ff.append(fn)
     return ff
@@ -69,10 +73,44 @@ def get_file_times(variable, validity_time):
             return [prevt, prevt + datetime.timedelta(hours=1)]
 
 
-def get_variable_at_ftime(variable, validity_time, max_lead=None, min_lead=None):
+def scalar_coord_to_aux_coord(cb, crd_name, data_dims=0):
+    scrd = cb.coords(crd_name)[0]
+    tpcrd = iris.coords.AuxCoord(
+        scrd.points,
+        standard_name=scrd.standard_name,
+        long_name=scrd.long_name,
+        var_name=scrd.var_name,
+        units=scrd.units,
+        attributes=scrd.attributes,
+        coord_system=scrd.coord_system,
+        climatological=scrd.climatological,
+    )
+    cb.remove_coord(crd_name)
+    cb.add_aux_coord(tpcrd, data_dims)
+    return 0
+
+
+# Iris will seperate out any data from ensemble member 0 into independent cubes
+#  (PP file format peculiarity). So we might get one cube, or several. Batch
+#  them up into a single cube.
+def ensemble_cube_up(cl):  # Input is a cube list
+    if len(cl) == 1:
+        return cl[0]
+    for i, cb in enumerate(cl):
+        if len(cb.data.shape) == 2:  # No realization dimension
+            cb.add_aux_coord(
+                iris.coords.AuxCoord(np.int32(0), "realization", units="1")
+            )
+            cl[i] = iris.util.new_axis(cb, "realization")
+            for acn in ["forecast_period", "forecast_reference_time"]:
+                r = scalar_coord_to_aux_coord(cl[i], acn)
+    return cl.concatenate_cube()
+
+
+def get_variable_at_ftime(variable, validity_time, min_lead=None, max_lead=None):
     """Get cube with the data, given that the validity time
     matches a data timestep. """
-    file_names = filter_files_by_lead(get_file_names(validity_time), max_lead, min_lead)
+    file_names = filter_files_by_lead(get_file_names(validity_time), min_lead, max_lead)
     if len(file_names) == 0:
         raise Exception("Data not available")
     if max_lead is None:
@@ -89,5 +127,23 @@ def get_variable_at_ftime(variable, validity_time, max_lead=None, min_lead=None)
     else:
         ftt = iris.Constraint(time=iris.time.PartialDateTime(hour=validity_time.hour))
     stco = iris.AttributeConstraint(STASH=stash_from_variable_names(variable))
-    hslice = iris.load_cube(file_names, stco & ftco & ftfr)
+    hslice = iris.load(file_names, stco & ftco & ftt)
     return hslice
+
+
+def load(variable, validity_time, max_lead=None, min_lead=None):
+    """Load requested data from disc, interpolating if necessary.
+    """
+    ftimes = get_file_times(variable, validity_time)
+    if len(ftimes) == 1:
+        return get_variable_at_ftime(variable, ftimes[0], max_lead=None, min_lead=None)
+    s_previous = get_variable_at_ftime(
+        variable, ftimes[0], max_lead=None, min_lead=None
+    )
+    s_next = get_variable_at_ftime(variable, ftimes[1], max_lead=None, min_lead=None)
+
+    # Iris won't merge cubes with different attributes
+    s_previous.attributes = s_next.attributes
+    s_next = iris.cube.CubeList((s_previous, s_next)).merge_cube()
+    s_next = s_next.interpolate([("time", validity_time)], iris.analysis.Linear())
+    return s_next
