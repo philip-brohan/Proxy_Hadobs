@@ -73,21 +73,37 @@ def get_file_times(variable, validity_time):
             return [prevt, prevt + datetime.timedelta(hours=1)]
 
 
-def scalar_coord_to_aux_coord(cb, crd_name, data_dims=0):
-    scrd = cb.coords(crd_name)[0]
-    tpcrd = iris.coords.AuxCoord(
-        scrd.points,
-        standard_name=scrd.standard_name,
-        long_name=scrd.long_name,
-        var_name=scrd.var_name,
-        units=scrd.units,
-        attributes=scrd.attributes,
-        coord_system=scrd.coord_system,
-        climatological=scrd.climatological,
+# Restore a length 1 first dimension to a cube which has been inappropriately squeezed.
+# The parameters must exactly match any other cube you want to concatenate to.
+def unsqueeze(
+    cb,  # cube to unsqueeze
+    dim_name="realization",  # Name of new dimension to add
+    dim_value=np.int32(0),  # Value of single point in new dimension
+    dim_units="1",  # Units of dimension
+    promotable_scalars=[
+        "forecast_period",
+        "forecast_reference_time",
+    ],  # Scalar coordinates which actually vary with the new dimension
+):
+    cb.add_aux_coord(
+        iris.coords.AuxCoord(dim_value, standard_name=dim_name, units=dim_units)
     )
-    cb.remove_coord(crd_name)
-    cb.add_aux_coord(tpcrd, data_dims)
-    return 0
+    cb = iris.util.new_axis(cb, dim_name)
+    for acn in promotable_scalars:
+        scrd = cb.coords(acn)[0]
+        tpcrd = iris.coords.AuxCoord(
+            scrd.points,
+            standard_name=scrd.standard_name,
+            long_name=scrd.long_name,
+            var_name=scrd.var_name,
+            units=scrd.units,
+            attributes=scrd.attributes,
+            coord_system=scrd.coord_system,
+            climatological=scrd.climatological,
+        )
+        cb.remove_coord(acn)
+        cb.add_aux_coord(tpcrd, 0)
+    return cb
 
 
 # Iris will seperate out any data from ensemble member 0 into independent cubes
@@ -98,12 +114,7 @@ def ensemble_cube_up(cl):  # Input is a cube list
         return cl[0]
     for i, cb in enumerate(cl):
         if len(cb.data.shape) == 2:  # No realization dimension
-            cb.add_aux_coord(
-                iris.coords.AuxCoord(np.int32(0), "realization", units="1")
-            )
-            cl[i] = iris.util.new_axis(cb, "realization")
-            for acn in ["forecast_period", "forecast_reference_time"]:
-                r = scalar_coord_to_aux_coord(cl[i], acn)
+            cl[i] = unsqueeze(cb)
     return cl.concatenate_cube()
 
 
@@ -128,6 +139,7 @@ def get_variable_at_ftime(variable, validity_time, min_lead=None, max_lead=None)
         ftt = iris.Constraint(time=iris.time.PartialDateTime(hour=validity_time.hour))
     stco = iris.AttributeConstraint(STASH=stash_from_variable_names(variable))
     hslice = iris.load(file_names, stco & ftco & ftt)
+    hslice = ensemble_cube_up(hslice)
     return hslice
 
 
