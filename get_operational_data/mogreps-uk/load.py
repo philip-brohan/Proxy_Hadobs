@@ -11,6 +11,11 @@ import datetime
 import glob
 import numpy as np
 
+# I know, I know - you don't have to tell me *every* time
+import warnings
+
+warnings.filterwarnings("ignore", message="Collapsing a non-contiguous coordinate")
+
 # Variable name to iris stash code
 #  See https://code.metoffice.gov.uk/trac/nwpscience/wiki/ModelInfo
 def stash_from_variable_names(variable):
@@ -63,7 +68,7 @@ def get_file_times(variable, validity_time):
         if validity_time.minute % 5 == 0:
             return [validity_time]
         else:
-            prevt = validity_time - datetime.timedelta(validity_time.minute % 5)
+            prevt = validity_time - datetime.timedelta(minutes=validity_time.minute % 5)
             return [prevt, prevt + datetime.timedelta(minutes=5)]
     else:
         if validity_time.minute == 0:
@@ -143,16 +148,48 @@ def get_variable_at_ftime(variable, validity_time, min_lead=None, max_lead=None)
     return hslice
 
 
-def load(variable, validity_time, max_lead=None, min_lead=None):
-    """Load requested data from disc, interpolating if necessary.
+def get_ens_mean_at_ftime(
+    variable, validity_time, max_members=None, min_lead=None, max_lead=None
+):
+    ensemble = get_variable_at_ftime(
+        variable, validity_time, min_lead=min_lead, max_lead=max_lead
+    )
+    if max_members is not None:
+        leads = ensemble.coords("forecast_period")[0].points
+        sl = np.argsort(leads)
+        if max_members < len(sl):
+            sl = sl[:max_members]
+            ensemble = ensemble[sl, :, :]
+    ensemble = ensemble.collapsed("realization", iris.analysis.MEAN)
+    return ensemble
+
+
+def load_mean(variable, validity_time, max_members=None, max_lead=None, min_lead=None):
+    """Load requested ensemble mean data from disc, interpolating if necessary.
     """
     ftimes = get_file_times(variable, validity_time)
     if len(ftimes) == 1:
-        return get_variable_at_ftime(variable, ftimes[0], max_lead=None, min_lead=None)
-    s_previous = get_variable_at_ftime(
-        variable, ftimes[0], max_lead=None, min_lead=None
+        return get_ens_mean_at_ftime(
+            variable,
+            ftimes[0],
+            max_members=max_members,
+            max_lead=max_lead,
+            min_lead=min_lead,
+        )
+    s_previous = get_ens_mean_at_ftime(
+        variable,
+        ftimes[0],
+        max_members=max_members,
+        max_lead=max_lead,
+        min_lead=min_lead,
     )
-    s_next = get_variable_at_ftime(variable, ftimes[1], max_lead=None, min_lead=None)
+    s_next = get_ens_mean_at_ftime(
+        variable,
+        ftimes[1],
+        max_members=max_members,
+        max_lead=max_lead,
+        min_lead=min_lead,
+    )
 
     # Iris won't merge cubes with different attributes
     s_previous.attributes = s_next.attributes
