@@ -23,7 +23,7 @@ def is_done(year, month, day, hour, minute):
 
 f = open("run.txt", "w+")
 
-start_day = datetime.datetime(2022, 2, 1, 0, 2)
+start_day = datetime.datetime(2021, 12, 1, 0, 2)
 end_day = datetime.datetime(2022, 2, 28, 23, 59)
 
 current_day = start_day

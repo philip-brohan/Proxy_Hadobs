@@ -197,9 +197,9 @@ t2m_img = ax.pcolorfast(
     lats,
     t2m.data + wnf.data / 10,
     cmap=cmocean.cm.balance,
-    vmin=270 - 5,
-    vmax=290 + 5,
-    alpha=0.8,
+    vmin=270 - 1,
+    vmax=290 + 1,
+    alpha=1.0,
     zorder=100,
 )
 
@@ -211,7 +211,7 @@ wnf = wind_noise_field.regrid(precip, iris.analysis.Linear())
 precip.data *= 1 + wnf.data / 40
 precip.data = np.ma.masked_where(precip.data < 2.0e-4, precip.data)
 precip_img = ax.pcolorfast(
-    lons, lats, precip.data, cmap=cmocean.cm.rain, vmin=0, vmax=0.0017, zorder=200
+    lons, lats, precip.data, cmap=cmocean.cm.rain, vmin=-0.0005, vmax=0.0017, zorder=200
 )
 
 # Label with the date
