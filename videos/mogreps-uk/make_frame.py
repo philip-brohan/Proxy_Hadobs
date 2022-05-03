@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 # Atmospheric state - near-surface temperature, wind, and precip.
+# Scaled wind speed version
 
 import os
 import sys
@@ -141,6 +142,10 @@ z = make_wind_seed(
 wind_noise_field = wind_field(
     u10m, v10m, z, sequence=int(seq / 5) * 5, epsilon=0.0005, iterations=50
 )
+# Smooth out the field where the wind speed is low.
+# (Highlights temperature variability and reduces visual artefacts).
+ws = iris.analysis.maths.apply_ufunc(np.sqrt,v10m*v10m+u10m*u10m)
+wind_noise_field *= iris.analysis.maths.apply_ufunc(np.sqrt,ws)/3
 
 # Define an axes to contain the plot. In this case our axes covers
 #  the whole figure
@@ -191,7 +196,7 @@ t2m = t2m.regrid(t2m_pc, iris.analysis.Linear())
 
 # Plot as a colour map
 wnf = wind_noise_field.regrid(t2m, iris.analysis.Linear())
-# ws = iris.analysis.maths.apply_ufunc(np.sqrt,v10m*v10m+u10m*u10m)
+
 t2m_img = ax.pcolorfast(
     lons,
     lats,

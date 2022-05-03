@@ -35,7 +35,7 @@ while current_day <= end_day:
         current_day.hour,
         current_day.minute,
     ):
-        current_day = current_day + datetime.timedelta(minutes=5)
+        current_day = current_day + datetime.timedelta(minutes=10)
         continue
     cmd = (
         "./make_frame.py --year=%d --month=%d "
@@ -49,5 +49,5 @@ while current_day <= end_day:
         current_day.minute,
     )
     f.write(cmd)
-    current_day = current_day + datetime.timedelta(minutes=5)
+    current_day = current_day + datetime.timedelta(minutes=10)
 f.close()
