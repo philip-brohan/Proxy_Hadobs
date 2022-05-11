@@ -79,18 +79,18 @@ def get_file_times(variable, validity_time):
 
 
 # Promote a scalar coordinate to an Auxcoord
-def sc_to_auxc(cb,scn,dim=0):
+def sc_to_auxc(cb, scn, dim=0):
     scrd = cb.coords(scn)[0]
     tpcrd = iris.coords.AuxCoord(
-            np.repeat(scrd.points,cb.shape[dim]),
-            standard_name=scrd.standard_name,
-            long_name=scrd.long_name,
-            var_name=scrd.var_name,
-            units=scrd.units,
-            attributes=scrd.attributes,
-            coord_system=scrd.coord_system,
-            climatological=scrd.climatological,
-        )
+        np.repeat(scrd.points, cb.shape[dim]),
+        standard_name=scrd.standard_name,
+        long_name=scrd.long_name,
+        var_name=scrd.var_name,
+        units=scrd.units,
+        attributes=scrd.attributes,
+        coord_system=scrd.coord_system,
+        climatological=scrd.climatological,
+    )
     cb.remove_coord(scn)
     cb.add_aux_coord(tpcrd, dim)
     return cb
@@ -136,13 +136,14 @@ def ensemble_cube_up(cl):  # Input is a cube list
     for i, cb in enumerate(cl):
         if len(cb.data.shape) == 2:  # No realization dimension
             cl[i] = unsqueeze(cb)
-        else: # Check for scalarized dimensions
-            for crd  in ["forecast_period","forecast_reference_time"]:
-                if not isinstance(cb.coords(crd)[0],iris.coords.AuxCoord):
-                    cl[i] = sc_to_auxc(cb,crd)
+        else:  # Check for scalarized dimensions
+            for crd in ["forecast_period", "forecast_reference_time"]:
+                if not isinstance(cb.coords(crd)[0], iris.coords.AuxCoord):
+                    cl[i] = sc_to_auxc(cb, crd)
     if len(cl) == 1:
         return cl[0]
     return cl.concatenate_cube()
+
 
 def get_variable_at_ftime(variable, validity_time, min_lead=None, max_lead=None):
     """Get cube with the data, given that the validity time
@@ -175,7 +176,7 @@ def get_ens_mean_at_ftime(
     ensemble = get_variable_at_ftime(
         variable, validity_time, min_lead=min_lead, max_lead=max_lead
     )
-    if max_members is not None and ensemble.shape[0]> max_members:
+    if max_members is not None and ensemble.shape[0] > max_members:
         ensemble = ensemble[:max_members, :, :]
     ensemble = ensemble.collapsed("realization", iris.analysis.MEAN)
     return ensemble
