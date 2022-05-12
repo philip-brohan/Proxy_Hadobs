@@ -50,14 +50,23 @@ parser.add_argument(
     "--minute", help="Minute of hour (0 to 59)", type=int, required=True
 )
 parser.add_argument(
-    "--opdir",
-    help="Directory for output files",
-    default="%s/images/opfc_mogreps_uk_3var_emean_analysis" % os.getenv("SCRATCH"),
-    type=str,
-    required=False,
+    "--min_lead", help="Minimum lead (hours)", type=int, required=False, default=0
 )
+parser.add_argument(
+    "--max_lead", help="Maximum lead (hours)", type=int, required=False, default=6
+)
+parser.add_argument(
+    "--opdir", help="Directory for output files", default="", type=str, required=False,
+)
+parser.add_argument("--label", action=argparse.BooleanOptionalAction, default=True)
 
 args = parser.parse_args()
+if args.opdir == "":
+    args.opdir = "%s/images/opfc_mogreps_uk_3var_%03d_%03d" % (
+        os.getenv("SCRATCH"),
+        args.min_lead,
+        args.max_lead,
+    )
 if not os.path.isdir(args.opdir):
     os.makedirs(args.opdir)
 
@@ -73,34 +82,35 @@ xmax = 363
 ymin = -3.76
 ymax = 7.14
 
-# In the  temperature field, damp the diurnal cycle, and
-#  boost the short-timescale variability. Load the
-#  recent data to calculate this.
-# (tavg,davg) = load_recent_temperatures(dte)
-
 # Load the model data
-t2m = load_mean("air.2m", dte, max_members=10, max_lead=6)
-# Remove the diurnal cycle
-# t2m.data -= davg.data
-# Double the synoptic variability
-# t2m.data += (t2m.data-tavg.data)*1
-# Add back a reduced diurnal cycle
-# t2m.data += davg.data*0.25
+t2m = load_mean(
+    "air.2m", dte, max_members=10, min_lead=args.min_lead, max_lead=args.max_lead
+)
 
-u10m = load_mean("uwnd.10m", dte, max_members=10, max_lead=6)
-v10m = load_mean("vwnd.10m", dte, max_members=10, max_lead=6)
+u10m = load_mean(
+    "uwnd.10m", dte, max_members=10, min_lead=args.min_lead, max_lead=args.max_lead
+)
+v10m = load_mean(
+    "vwnd.10m", dte, max_members=10, min_lead=args.min_lead, max_lead=args.max_lead
+)
 
 # Smooth precip in time to blur ensemble member changes at the hour.
-rain = load_mean("rain", dte, max_members=10, max_lead=6)
-snow = load_mean("snow", dte, max_members=10, max_lead=6)
+rain = load_mean(
+    "rain", dte, max_members=10, min_lead=args.min_lead, max_lead=args.max_lead
+)
+snow = load_mean(
+    "snow", dte, max_members=10, min_lead=args.min_lead, max_lead=args.max_lead
+)
 precip = rain + snow
 dte_f = dte + datetime.timedelta(minutes=5)
 p2 = load_mean("rain", dte_f, max_members=10, max_lead=6) + load_mean(
     "snow", dte_f, max_members=10, max_lead=6
 )
 dte_p = dte - datetime.timedelta(minutes=5)
-p3 = load_mean("rain", dte_p, max_members=10, max_lead=6) + load_mean(
-    "snow", dte_p, max_members=10, max_lead=6
+p3 = load_mean(
+    "rain", dte_p, max_members=10, min_lead=args.min_lead, max_lead=args.max_lead
+) + load_mean(
+    "snow", dte_p, max_members=10, min_lead=args.min_lead, max_lead=args.max_lead
 )
 precip = (precip + p2 + p3) / 3
 
@@ -144,8 +154,8 @@ wind_noise_field = wind_field(
 )
 # Smooth out the field where the wind speed is low.
 # (Highlights temperature variability and reduces visual artefacts).
-ws = iris.analysis.maths.apply_ufunc(np.sqrt,v10m*v10m+u10m*u10m)
-wind_noise_field *= iris.analysis.maths.apply_ufunc(np.sqrt,ws)/3
+ws = iris.analysis.maths.apply_ufunc(np.sqrt, v10m * v10m + u10m * u10m)
+wind_noise_field *= iris.analysis.maths.apply_ufunc(np.sqrt, ws) / 3
 
 # Define an axes to contain the plot. In this case our axes covers
 #  the whole figure
@@ -220,20 +230,21 @@ precip_img = ax.pcolorfast(
 )
 
 # Label with the date
-ax.text(
-    xmax - (xmax - xmin) * 0.021,
-    ymax - (ymax - ymin) * 0.016,
-    "%04d-%02d-%02d:%02d" % (args.year, args.month, args.day, args.hour),
-    horizontalalignment="right",
-    verticalalignment="top",
-    color="black",
-    bbox=dict(
-        facecolor=(0.6, 0.6, 0.6, 0.5), edgecolor="black", boxstyle="round", pad=0.2
-    ),
-    size=14,
-    clip_on=True,
-    zorder=500,
-)
+if args.label:
+    ax.text(
+        xmax - (xmax - xmin) * 0.021,
+        ymax - (ymax - ymin) * 0.016,
+        "%04d-%02d-%02d:%02d" % (args.year, args.month, args.day, args.hour),
+        horizontalalignment="right",
+        verticalalignment="top",
+        color="black",
+        bbox=dict(
+            facecolor=(0.6, 0.6, 0.6, 0.5), edgecolor="black", boxstyle="round", pad=0.2
+        ),
+        size=14,
+        clip_on=True,
+        zorder=500,
+    )
 
 # Render the figure as a png
 fig.savefig(
