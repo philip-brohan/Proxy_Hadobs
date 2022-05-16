@@ -32,7 +32,7 @@ def fcst_is_done(year, month, day, hour, minute):
 
 def cmp_is_done(year, month, day, hour, minute):
     op_file_name = (
-        "%s/images/opfc_mogreps_uk_3var_120_126/" + "%04d%02d%02d%02d%02d.png"
+        "%s/images/opfc_mogreps_uk_3var_composite/" + "%04d%02d%02d%02d%02d.png"
     ) % (os.getenv("SCRATCH"), year, month, day, hour, minute,)
     if (
         ncst_is_done(year, month, day, hour, minute)
@@ -45,8 +45,8 @@ def cmp_is_done(year, month, day, hour, minute):
 
 f = open("run.txt", "w+")
 
-start_day = datetime.datetime(2022, 1, 31, 0, 2)
-end_day = datetime.datetime(2022, 2, 1, 23, 59)
+start_day = datetime.datetime(2021, 12, 1, 0, 2)
+end_day = datetime.datetime(2022, 2, 28, 23, 59)
 
 current_day = start_day
 while current_day <= end_day:

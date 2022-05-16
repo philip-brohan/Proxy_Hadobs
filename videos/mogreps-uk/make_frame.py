@@ -83,36 +83,32 @@ ymin = -3.76
 ymax = 7.14
 
 # Load the model data
-t2m = load_mean(
-    "air.2m", dte, max_members=10, min_lead=args.min_lead, max_lead=args.max_lead
-)
+t2m = load_mean("air.2m", dte, min_lead=args.min_lead, max_lead=args.max_lead)
 
-u10m = load_mean(
-    "uwnd.10m", dte, max_members=10, min_lead=args.min_lead, max_lead=args.max_lead
-)
-v10m = load_mean(
-    "vwnd.10m", dte, max_members=10, min_lead=args.min_lead, max_lead=args.max_lead
-)
+u10m = load_mean("uwnd.10m", dte, min_lead=args.min_lead, max_lead=args.max_lead)
+v10m = load_mean("vwnd.10m", dte, min_lead=args.min_lead, max_lead=args.max_lead)
 
 # Smooth precip in time to blur ensemble member changes at the hour.
-rain = load_mean(
-    "rain", dte, max_members=10, min_lead=args.min_lead, max_lead=args.max_lead
-)
-snow = load_mean(
-    "snow", dte, max_members=10, min_lead=args.min_lead, max_lead=args.max_lead
-)
+rain = load_mean("rain", dte, min_lead=args.min_lead, max_lead=args.max_lead)
+snow = load_mean("snow", dte, min_lead=args.min_lead, max_lead=args.max_lead)
 precip = rain + snow
-dte_f = dte + datetime.timedelta(minutes=5)
-p2 = load_mean("rain", dte_f, max_members=10, max_lead=6) + load_mean(
-    "snow", dte_f, max_members=10, max_lead=6
-)
-dte_p = dte - datetime.timedelta(minutes=5)
+dte_f = dte + datetime.timedelta(minutes=10)
+p2 = load_mean(
+    "rain", dte_f, min_lead=args.min_lead, max_lead=args.max_lead
+) + load_mean("snow", dte_f, min_lead=args.min_lead, max_lead=args.max_lead)
+dte_f = dte + datetime.timedelta(minutes=20)
 p3 = load_mean(
-    "rain", dte_p, max_members=10, min_lead=args.min_lead, max_lead=args.max_lead
-) + load_mean(
-    "snow", dte_p, max_members=10, min_lead=args.min_lead, max_lead=args.max_lead
-)
-precip = (precip + p2 + p3) / 3
+    "rain", dte_f, min_lead=args.min_lead, max_lead=args.max_lead
+) + load_mean("snow", dte_f, min_lead=args.min_lead, max_lead=args.max_lead)
+dte_p = dte - datetime.timedelta(minutes=10)
+p4 = load_mean(
+    "rain", dte_p, min_lead=args.min_lead, max_lead=args.max_lead
+) + load_mean("snow", dte_p, min_lead=args.min_lead, max_lead=args.max_lead)
+dte_p = dte - datetime.timedelta(minutes=20)
+p5 = load_mean(
+    "rain", dte_p, min_lead=args.min_lead, max_lead=args.max_lead
+) + load_mean("snow", dte_p, min_lead=args.min_lead, max_lead=args.max_lead)
+precip = (precip + p2 + p3 + p4 + p5) / 5
 
 mask = iris.load_cube(
     "%s/fixed_fields/land_mask/HadUKG_land_from_Copernicus.nc" % os.getenv("DATADIR")

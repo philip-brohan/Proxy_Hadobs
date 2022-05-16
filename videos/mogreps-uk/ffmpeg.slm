@@ -17,5 +17,5 @@ ffmpeg -r 24 -pattern_type glob -i opfc_mogreps_uk_3var_emean_analysis/\*.png -c
 
 # Add the soundtrack
 # Sound file made with dynascore - archived to MASS
-rm MUK_s.mp4
-ffmpeg -i MUK.mp4 -i mogreps-UK_2021-2_winter_sound.wav -shortest -c:v copy -c:a aac MUK_s.mp4
+#rm MUK_s.mp4
+#ffmpeg -i MUK.mp4 -i mogreps-UK_2021-2_winter_sound.wav -shortest -c:v copy -c:a aac MUK_s.mp4

@@ -25,7 +25,7 @@ current = datetime.datetime(
 endd = datetime.datetime(args.endyear, args.endmonth, args.endday, args.endhour, 59, 59)
 
 while current <= endd:
-    opfile = "%s/opfc/mogreps-uk/%04d/%02d/%02d/%02d_%03d_%03d_c.pp" % (
+    opfile_c = "%s/opfc/mogreps-uk/%04d/%02d/%02d/%02d_%03d_%03d_c.pp" % (
         os.getenv("SCRATCH"),
         current.year,
         current.month,
@@ -34,7 +34,16 @@ while current <= endd:
         args.min_lead,
         args.max_lead,
     )
-    if not os.path.isfile(opfile):
+    opfile_p = "%s/opfc/mogreps-uk/%04d/%02d/%02d/%02d_%03d_%03d_p.pp" % (
+        os.getenv("SCRATCH"),
+        current.year,
+        current.month,
+        current.day,
+        current.hour,
+        args.min_lead,
+        args.max_lead,
+    )
+    if not os.path.isfile(opfile_c) and not os.path.isfile(opfile_p):
         print(
             (
                 "./get_data_for_hour.py --year=%d --month=%d --day=%d --hour=%d "

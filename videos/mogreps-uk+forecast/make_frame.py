@@ -33,7 +33,7 @@ if not os.path.isdir(args.opdir):
 sis = 0.65
 
 # Create a background image
-bg = Image.new("RGB", (3480, 2160), (256, 256, 256))
+bg = Image.new("RGB", (3840, 2160), (256, 256, 256))
 
 # Add the forecast image to the background
 fcst = Image.open(
@@ -41,7 +41,7 @@ fcst = Image.open(
     % (os.getenv("SCRATCH"), args.year, args.month, args.day, args.hour, args.minute)
 )
 fcst.thumbnail((int(2520 * sis), int(3270 * sis)), Image.ANTIALIAS)
-bg.paste(fcst, (int((3480 - (2520 * sis) * 2) / 3), int((2160 - 3270 * sis) / 2)))
+bg.paste(fcst, (int((3840 - (2520 * sis) * 2) / 3), int((2160 - 3270 * sis) / 2)))
 
 # Add the nowcast image to the background
 ncst = Image.open(
@@ -52,7 +52,7 @@ ncst.thumbnail((int(2520 * sis), int(3270 * sis)), Image.ANTIALIAS)
 bg.paste(
     ncst,
     (
-        int(((3480 - (2520 * sis) * 2) // 3) * 2 + int(2520 * sis)),
+        int(((3840 - (2520 * sis) * 2) // 3) * 2 + int(2520 * sis)),
         int((2160 - 3270 * sis) // 2),
     ),
 )
