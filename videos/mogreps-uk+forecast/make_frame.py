@@ -37,7 +37,7 @@ bg = Image.new("RGB", (3840, 2160), (256, 256, 256))
 
 # Add the forecast image to the background
 fcst = Image.open(
-    "%s/images/opfc_mogreps_uk_3var_120_126/%04d%02d%02d%02d%02d.png"
+    "%s/images/opfc_mogreps_uk_3var_069_075/%04d%02d%02d%02d%02d.png"
     % (os.getenv("SCRATCH"), args.year, args.month, args.day, args.hour, args.minute)
 )
 fcst.thumbnail((int(2520 * sis), int(3270 * sis)), Image.ANTIALIAS)
