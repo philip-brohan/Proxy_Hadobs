@@ -8,36 +8,36 @@
 # Extract selected sections of the Winter 2021/2 video and
 #  composite them into a highlights video.
 
-dir=/scratch/hadpb/images/
+dir=/scratch/hadpb/images
 source=$dir/MUK_composite.mp4
 
 # Warm front and rain
-ffmpeg -y -i $source -ss 00:00:28 -to 00:00:50 -c:v libx264 -threads 16 -preset veryslow -tune animation -profile:v high -level 4.2 -pix_fmt yuv420p -b:v 10M -maxrate 20M -bufsize 10M $dir/h1.mp4
+#ffmpeg -y -i $source -ss 00:00:28 -to 00:00:50 -c:v libx264 -threads 16 -preset veryslow -tune animation -profile:v high -level 4.2 -pix_fmt yuv420p -b:v 10M -maxrate 20M -bufsize 10M $dir/h1.mp4
 
 # Cold front and rain
-ffmpeg -y -i $source -ss 00:03:15 -to 00:03:35 -c:v libx264 -threads 16 -preset veryslow -tune animation -profile:v high -level 4.2 -pix_fmt yuv420p -b:v 10M -maxrate 20M -bufsize 10M $dir/h2.mp4
+#ffmpeg -y -i $source -ss 00:03:15 -to 00:03:35 -c:v libx264 -threads 16 -preset veryslow -tune animation -profile:v high -level 4.2 -pix_fmt yuv420p -b:v 10M -maxrate 20M -bufsize 10M $dir/h2.mp4
 
 ffmpeg -y -i $dir/h1.mp4 -i $dir/h2.mp4 -filter_complex xfade=transition=hblur:duration=1:offset=21 -c:v libx264 -threads 16 -preset veryslow -tune animation -profile:v high -level 4.2 -pix_fmt yuv420p -b:v 10M -maxrate 20M -bufsize 10M $dir/h3.mp4
 
-rm -f $dir/h1.mp4 $dir/h2.mp4
+#rm -f $dir/h1.mp4 $dir/h2.mp4
 
 # Front and cyclone
-ffmpeg -y -i $source -ss 00:05:54 -to 00:06:08 -c:v libx264 -threads 16 -preset veryslow -tune animation -profile:v high -level 4.2 -pix_fmt yuv420p -b:v 10M -maxrate 20M -bufsize 10M $dir/h1.mp4
+#ffmpeg -y -i $source -ss 00:05:54 -to 00:06:08 -c:v libx264 -threads 16 -preset veryslow -tune animation -profile:v high -level 4.2 -pix_fmt yuv420p -b:v 10M -maxrate 20M -bufsize 10M $dir/h4.mp4
 
-ffmpeg -y -i $dir/h3.mp4 -i $dir/h1.mp4 -filter_complex xfade=transition=hblur:duration=1:offset=38 -c:v libx264 -threads 16 -preset veryslow -tune animation -profile:v high -level 4.2 -pix_fmt yuv420p -b:v 10M -maxrate 20M -bufsize 10M $dir/h2.mp4
+ffmpeg -y -i $dir/h3.mp4 -i $dir/h4.mp4 -filter_complex xfade=transition=hblur:duration=1:offset=38 -c:v libx264 -threads 16 -preset veryslow -tune animation -profile:v high -level 4.2 -pix_fmt yuv420p -b:v 10M -maxrate 20M -bufsize 10M $dir/h5.mp4
 
-rm -f $dir/h1.mp4 $dir/h3.mp4
-
-# Cold front and rain
-ffmpeg -y -i $source -ss 00:06:25 -to 00:06:47 -c:v libx264 -threads 16 -preset veryslow -tune animation -profile:v high -level 4.2 -pix_fmt yuv420p -b:v 10M -maxrate 20M -bufsize 10M $dir/h1.mp4
-
-ffmpeg -y -i $dir/h2.mp4 -i $dir/h1.mp4 -filter_complex xfade=transition=hblur:duration=1:offset=52 -c:v libx264 -threads 16 -preset veryslow -tune animation -profile:v high -level 4.2 -pix_fmt yuv420p -b:v 10M -maxrate 20M -bufsize 10M $dir/h3.mp4
-
-rm -f h1.mp4 h2.mp4
+#rm -f $dir/h3.mp4 $dir/h4.mp4
 
 # Cold front and rain
-ffmpeg -y -i $source -ss 00:07:20 -to 00:08:16 -c:v libx264 -threads 16 -preset veryslow -tune animation -profile:v high -level 4.2 -pix_fmt yuv420p -b:v 10M -maxrate 20M -bufsize 10M $dir/h1.mp4
+#ffmpeg -y -i $source -ss 00:06:25 -to 00:06:47 -c:v libx264 -threads 16 -preset veryslow -tune animation -profile:v high -level 4.2 -pix_fmt yuv420p -b:v 10M -maxrate 20M -bufsize 10M $dir/h6.mp4
 
-ffmpeg -y -i $dir/h3.mp4 -i $dir/h1.mp4 -filter_complex xfade=transition=hblur:duration=1:offset=71 -c:v libx264 -threads 16 -preset veryslow -tune animation -profile:v high -level 4.2 -pix_fmt yuv420p -b:v 10M -maxrate 20M -bufsize 10M $dir/highlights.mp4
+ffmpeg -y -i $dir/h5.mp4 -i $dir/h6.mp4 -filter_complex xfade=transition=hblur:duration=1:offset=51 -c:v libx264 -threads 16 -preset veryslow -tune animation -profile:v high -level 4.2 -pix_fmt yuv420p -b:v 10M -maxrate 20M -bufsize 10M $dir/h7.mp4
 
-rm -f $dir/h1.mp4 $dir/h3.mp4
+#rm -f $dir/h5.mp4 $dir/h6.mp4
+
+# Front and cyclones
+#ffmpeg -y -i $source -ss 00:07:20 -to 00:08:16 -c:v libx264 -threads 16 -preset veryslow -tune animation -profile:v high -level 4.2 -pix_fmt yuv420p -b:v 10M -maxrate 20M -bufsize 10M $dir/h8.mp4
+
+ffmpeg -y -i $dir/h7.mp4 -i $dir/h8.mp4 -filter_complex xfade=transition=hblur:duration=1:offset=70 -c:v libx264 -threads 16 -preset veryslow -tune animation -profile:v high -level 4.2 -pix_fmt yuv420p -b:v 10M -maxrate 20M -bufsize 10M $dir/highlights.mp4
+
+#rm -f $dir/h7.mp4 $dir/h8.mp4
