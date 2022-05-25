@@ -10,6 +10,7 @@ dependencies:
   - cmocean=2.0
   - svt-av1=0.9 # Old version required by ffmpeg
   - ffmpeg=5.0
+  - cdsapi=0.5
 # Optional, code formatter
   - black
 # Optional - documentation generator
