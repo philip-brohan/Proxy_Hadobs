@@ -20,7 +20,7 @@ parser.add_argument(
 args = parser.parse_args()
 opdir = "%s/%04d/%02d" % (args.opdir, args.year, args.month)
 if not os.path.isdir(opdir):
-    os.makedirs(opdir)
+    os.makedirs(opdir, exist_ok=True)
 c = cdsapi.Client()
 
 c.retrieve(
