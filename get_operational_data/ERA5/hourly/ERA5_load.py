@@ -4,7 +4,12 @@ import os
 import iris
 import iris.cube
 import iris.time
+import iris.coord_systems
+import iris.fileformats
 import datetime
+
+# Need to add coordinate system metadata so they work with cartopy
+coord_s = iris.coord_systems.GeogCS(iris.fileformats.pp.EARTH_RADIUS)
 
 
 def load_hourly_at_hour(variable, year, month, day, hour):
@@ -20,6 +25,8 @@ def load_hourly_at_hour(variable, year, month, day, hour):
         time=iris.time.PartialDateTime(year=year, month=month, day=day, hour=hour)
     )
     hslice = iris.load_cube(fname, ftt)
+    hslice.coord("latitude").coord_system = coord_s
+    hslice.coord("longitude").coord_system = coord_s
     return hslice
 
 

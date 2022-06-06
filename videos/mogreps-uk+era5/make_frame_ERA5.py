@@ -1,0 +1,219 @@
+#!/usr/bin/env python
+
+# Atmospheric state - near-surface temperature, wind, and precip.
+# Scaled wind speed version
+# Uses ERA5 data
+
+import os
+import sys
+import datetime
+
+import iris
+import numpy as np
+
+import warnings
+
+warnings.filterwarnings("ignore", message=".*keyword argument to TransverseMercator")
+
+import matplotlib
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+from matplotlib.figure import Figure
+from matplotlib.patches import Rectangle
+from matplotlib.lines import Line2D
+import cmocean
+from pandas import qcut
+
+sys.path.append("%s/../../get_operational_data/ERA5/hourly" % os.path.dirname(__file__))
+from ERA5_load import load_hourly
+
+sys.path.append("%s/../mogreps-uk" % os.path.dirname(__file__))
+from plots import plot_cube
+from plots import make_wind_seed
+from plots import wind_field
+from plots import get_precip_colours
+
+# from plots import draw_lat_lon
+
+# Fix dask SPICE bug
+import dask
+
+dask.config.set(scheduler="single-threaded")
+
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--year", help="Year", type=int, required=True)
+parser.add_argument("--month", help="Integer month", type=int, required=True)
+parser.add_argument("--day", help="Day of month", type=int, required=True)
+parser.add_argument("--hour", help="Time of day (0 to 23)", type=int, required=True)
+parser.add_argument(
+    "--minute", help="Minute of hour (0 to 59)", type=int, required=True
+)
+parser.add_argument(
+    "--opdir", help="Directory for output files", default="", type=str, required=False,
+)
+parser.add_argument("--label", action=argparse.BooleanOptionalAction, default=True)
+
+args = parser.parse_args()
+if args.opdir == "":
+    args.opdir = "%s/images/opfc_ERA5_uk_3var" % (os.getenv("SCRATCH"),)
+if not os.path.isdir(args.opdir):
+    os.makedirs(args.opdir)
+
+dte = datetime.datetime(args.year, args.month, args.day, args.hour, args.minute)
+
+# Pole position
+pole_latitude = 37.5
+pole_longitude = 177.5
+npg_longitude = 0
+# Region to plot (degrees, rotated)
+xmin = 355
+xmax = 363
+ymin = -3.76
+ymax = 7.14
+
+# Land mask and UK grid specification
+mask = iris.load_cube(
+    "%s/fixed_fields/land_mask/HadUKG_land_from_Copernicus.nc" % os.getenv("DATADIR")
+)
+
+# Load the model data
+t2m = load_hourly("2m_temperature", dte)
+
+u10m = load_hourly("10m_u_component_of_wind", dte)
+v10m = load_hourly("10m_v_component_of_wind", dte)
+
+precip = load_hourly("total_precipitation", dte) / 3
+
+# Define the figure (page size, background color, resolution, ...
+fig = Figure(
+    figsize=(8.4, 10.9),  # Width, Height (inches)
+    dpi=300,
+    facecolor=(0.5, 0.5, 0.5, 1),
+    edgecolor=None,
+    linewidth=0.0,
+    frameon=False,  # Don't draw a frame
+    subplotpars=None,
+    tight_layout=None,
+)
+fig.set_frameon(False)
+# Attach a canvas
+canvas = FigureCanvas(fig)
+
+# Make the wind noise
+wind_pc = plot_cube(
+    0.015, xmin, xmax, ymin, ymax, pole_latitude, pole_longitude, npg_longitude
+)
+cs = iris.coord_systems.RotatedGeogCS(pole_latitude, pole_longitude, npg_longitude)
+rw = iris.analysis.cartography.rotate_winds(u10m, v10m, cs)
+u10m = rw[0].regrid(wind_pc, iris.analysis.Linear())
+v10m = rw[1].regrid(wind_pc, iris.analysis.Linear())
+seq = (dte - datetime.datetime(2000, 1, 1)).total_seconds() / 60  # Minutes since
+z = make_wind_seed(
+    plot_cube(
+        0.015, xmin, xmax, ymin, ymax, pole_latitude, pole_longitude, npg_longitude
+    ),
+    seed=1,
+)
+wind_noise_field = wind_field(
+    u10m, v10m, z, sequence=int(seq / 5) * 5, epsilon=0.0005, iterations=50
+)
+# Smooth out the field where the wind speed is low.
+# (Highlights temperature variability and reduces visual artefacts).
+ws = iris.analysis.maths.apply_ufunc(np.sqrt, v10m * v10m + u10m * u10m)
+wind_noise_field *= iris.analysis.maths.apply_ufunc(np.sqrt, ws) / 3
+
+# Define an axes to contain the plot. In this case our axes covers
+#  the whole figure
+ax = fig.add_axes([0, 0, 1, 1])
+ax.set_axis_off()  # Don't want surrounding x and y axis
+
+# Lat and lon range (in rotated-pole coordinates) for plot
+ax.set_xlim(xmin, xmax)
+ax.set_ylim(ymin, ymax)
+ax.set_aspect("auto")
+
+# Background
+ax.add_patch(
+    Rectangle(
+        (xmin, ymin),
+        xmax - xmin,
+        ymax - ymin,
+        facecolor=(0.6, 0.6, 0.6, 1),
+        fill=True,
+        zorder=1,
+    )
+)
+
+# Plot the land mask
+mask_pc = plot_cube(
+    0.01, xmin, xmax, ymin, ymax, pole_latitude, pole_longitude, npg_longitude
+)
+mask = mask.regrid(mask_pc, iris.analysis.Nearest())
+lats = mask.coord("latitude").points
+lons = mask.coord("longitude").points
+mask_img = ax.pcolorfast(
+    lons,
+    lats,
+    mask.data,
+    cmap=matplotlib.colors.ListedColormap(((0.4, 0.4, 0.4, 0), (0.4, 0.4, 0.4, 0.3))),
+    vmin=0,
+    vmax=1,
+    alpha=1.0,
+    zorder=700,
+)
+
+
+# Plot the T2M
+t2m_pc = plot_cube(
+    0.01, xmin, xmax, ymin, ymax, pole_latitude, pole_longitude, npg_longitude
+)
+t2m = t2m.regrid(t2m_pc, iris.analysis.Linear())
+
+# Plot as a colour map
+wnf = wind_noise_field.regrid(t2m, iris.analysis.Linear())
+
+t2m_img = ax.pcolorfast(
+    lons,
+    lats,
+    t2m.data + wnf.data / 10,
+    cmap=cmocean.cm.balance,
+    vmin=270 - 1,
+    vmax=290 + 1,
+    alpha=1.0,
+    zorder=100,
+)
+
+# Plot the precip
+precip = precip.regrid(t2m_pc, iris.analysis.Linear())
+precip.data[precip.data > 0.001] = 0.001
+
+wnf = wind_noise_field.regrid(precip, iris.analysis.Linear())
+precip.data *= 1 + wnf.data / 40
+precip.data = np.ma.masked_where(precip.data < 2.0e-4, precip.data)
+precip_img = ax.pcolorfast(
+    lons, lats, precip.data, cmap=cmocean.cm.rain, vmin=-0.0005, vmax=0.0017, zorder=200
+)
+
+# Label with the date
+if args.label:
+    ax.text(
+        xmax - (xmax - xmin) * 0.021,
+        ymax - (ymax - ymin) * 0.016,
+        "%04d-%02d-%02d:%02d" % (args.year, args.month, args.day, args.hour),
+        horizontalalignment="right",
+        verticalalignment="top",
+        color="black",
+        bbox=dict(
+            facecolor=(0.6, 0.6, 0.6, 0.5), edgecolor="black", boxstyle="round", pad=0.2
+        ),
+        size=14,
+        clip_on=True,
+        zorder=500,
+    )
+
+# Render the figure as a png
+fig.savefig(
+    "%s/%04d%02d%02d%02d%02d.png"
+    % (args.opdir, args.year, args.month, args.day, args.hour, args.minute,)
+)

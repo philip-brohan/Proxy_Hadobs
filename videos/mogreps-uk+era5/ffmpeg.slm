@@ -1,0 +1,17 @@
+#!/bin/ksh -l
+#SBATCH --qos=normal
+#SBATCH --mem=200000
+#SBATCH --ntasks=16
+#SBATCH --ntasks-per-core=1
+#SBATCH --time=79
+
+cd $SCRATCH/images/
+
+rm M+E_composite.mp4
+# Get rid of empty images - they make ffmpeg stop processing
+#  These usually come from disc problems in the creation step.
+find opfc_M+E_uk_3var_composite/*.png -type f -empty -delete
+
+# Encode the video
+ffmpeg -r 24 -pattern_type glob -i opfc_M+E_uk_3var_composite/\*.png -c:v libx264 -threads 16 -movflags +faststart -preset veryslow -tune animation -profile:v high -level 4.2 -pix_fmt yuv420p -b:v 10M -maxrate 20M -bufsize 10M -c:a copy M+E_composite.mp4
+
