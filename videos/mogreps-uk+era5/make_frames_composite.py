@@ -22,6 +22,20 @@ def mogreps_is_done(year, month, day, hour, minute):
     return False
 
 
+def ERA5_is_done(year, month, day, hour, minute):
+    op_file_name = ("%s/images/opfc_ERA5_uk_3var/" + "%04d%02d%02d%02d%02d.png") % (
+        os.getenv("SCRATCH"),
+        year,
+        month,
+        day,
+        hour,
+        minute,
+    )
+    if os.path.isfile(op_file_name):
+        return True
+    return False
+
+
 def cmp_is_done(year, month, day, hour, minute):
     op_file_name = (
         "%s/images/opfc_M+E_uk_3var_composite/" + "%04d%02d%02d%02d%02d.png"
